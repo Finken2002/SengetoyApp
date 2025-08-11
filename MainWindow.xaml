@@ -34,17 +34,17 @@
   <DataGridTextColumn Binding="{Binding Note}" Header="Notat" Width="2*" />
   <DataGridCheckBoxColumn Binding="{Binding Paused}" Header="Pauset" Width="*" />
   <DataGridTemplateColumn Header="Handlinger" Width="2*">
-    <DataGridTemplateColumn.CellTemplate>
-      <DataTemplate>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-          <Button Content="Skiftet i dag" Click="MarkToday_Click" Margin="0,0,6,0" Padding="6,2"/>
-          <Button Content="Utsett 1 uke" Click="Postpone7_Click" Margin="0,0,6,0" Padding="6,2"/>
-          <Button Content="{Binding PauseButtonLabel}" Click="TogglePause_Click" Margin="0,0,6,0" Padding="6,2"/>
-          <Button Content="Slett" Click="DeleteRoom_Click" Padding="6,2"/>
-        </StackPanel>
-      </DataTemplate>
-    </DataGridTemplateColumn.CellTemplate>
-  </DataGridTemplateColumn>
+  <DataGridTemplateColumn.CellTemplate>
+    <DataTemplate>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+        <Button Content="Skiftet i dag" Click="MarkToday_Click" Margin="0,0,6,0" Padding="6,2"/>
+        <Button Content="Skiftet tidligere…" Click="MarkPrevious_Click" Margin="0,0,6,0" Padding="6,2"/>
+        <Button Content="{Binding PauseButtonLabel}" Click="TogglePause_Click" Margin="0,0,6,0" Padding="6,2"/>
+        <Button Content="Slett" Click="DeleteRoom_Click" Padding="6,2"/>
+      </StackPanel>
+    </DataTemplate>
+  </DataGridTemplateColumn.CellTemplate>
+</DataGridTemplateColumn>
 </DataGrid.Columns>
 
 

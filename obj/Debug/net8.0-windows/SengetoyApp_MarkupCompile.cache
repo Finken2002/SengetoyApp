@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 C:\Users\Finken\Downloads\SengetoyApp_starter\sengetoyapp\App.xaml
-2-1275703355
+355162365
 
-4-545017060
+51913546229
 202-2052123785
-AddRoomDialog.xaml;MainWindow.xaml;
+AddRoomDialog.xaml;ChooseDateDialog.xaml;MainWindow.xaml;
 
 False
 

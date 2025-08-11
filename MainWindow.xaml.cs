@@ -354,23 +354,50 @@ private void DeleteRoom_Click(object sender, RoutedEventArgs e)
             DataContext = null; DataContext = this;
         }
 
-        private void Postpone7_Click(object sender, RoutedEventArgs e)
+        private void MarkPrevious_Click(object sender, RoutedEventArgs e)
         {
             if (RowFromSender(sender) is not RoomRow row) return;
+
+            // Foreslå en fornuftig startdato (i går, men minimum sist skiftet):
+            var start = DateTime.Today.AddDays(-1);
+            if (start < row.LastChanged) start = row.LastChanged;
+
+            var dlg = new ChooseDateDialog(start) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            var chosen = dlg.SelectedDate.Date;
+
+            // Sikring: ikke aksepter fremtidsdato
+            if (chosen > DateTime.Today)
+            {
+                MessageBox.Show("Dato kan ikke være i fremtiden.", "Ugyldig dato",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             using var conn = new SqliteConnection(_connStr);
             conn.Open();
 
-            var newLast = row.LastChanged.AddDays(7);
+            // Oppdater last_changed til valgt dato
             var cmd = conn.CreateCommand();
             cmd.CommandText = "UPDATE linens SET last_changed=@d WHERE room_id=@rid;";
-            cmd.Parameters.AddWithValue("@d", ToIsoDate(newLast));
+            cmd.Parameters.AddWithValue("@d", ToIsoDate(chosen));
             cmd.Parameters.AddWithValue("@rid", row.Id);
             cmd.ExecuteNonQuery();
 
+            // Logg hendelsen
+            cmd = conn.CreateCommand();
+            cmd.CommandText = "INSERT INTO changes_log(room_id, changed_at, note) VALUES(@rid, @ts, @note);";
+            cmd.Parameters.AddWithValue("@rid", row.Id);
+            cmd.Parameters.AddWithValue("@ts", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            cmd.Parameters.AddWithValue("@note", $"Skiftet tidligere: {ToIsoDate(chosen)}");
+            cmd.ExecuteNonQuery();
+
             LoadRows();
-            FooterText = $"Rom {row.RoomNumber}: utsatt 7 dager.";
+            FooterText = $"Rom {row.RoomNumber}: satt skiftedato til {ToIsoDate(chosen)}.";
             DataContext = null; DataContext = this;
         }
+
 
         private void TogglePause_Click(object sender, RoutedEventArgs e)
         {

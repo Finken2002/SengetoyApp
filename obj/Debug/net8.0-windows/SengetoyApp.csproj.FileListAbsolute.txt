@@ -46,3 +46,5 @@ C:\Users\Finken\Downloads\SengetoyApp_starter\sengetoyapp\obj\Debug\net8.0-windo
 C:\Users\Finken\Downloads\SengetoyApp_starter\sengetoyapp\obj\Debug\net8.0-windows\SengetoyApp.genruntimeconfig.cache
 C:\Users\Finken\Downloads\SengetoyApp_starter\sengetoyapp\obj\Debug\net8.0-windows\ref\SengetoyApp.dll
 C:\Users\Finken\Downloads\SengetoyApp_starter\sengetoyapp\obj\Debug\net8.0-windows\SengetoyApp.sourcelink.json
+C:\Users\Finken\Downloads\SengetoyApp_starter\sengetoyapp\obj\Debug\net8.0-windows\ChooseDateDialog.baml
+C:\Users\Finken\Downloads\SengetoyApp_starter\sengetoyapp\obj\Debug\net8.0-windows\ChooseDateDialog.g.cs
