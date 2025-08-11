@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SengetoyApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e8f987eb205e89018e05df5eb859764d11b23e0f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+811138a39d6dccfda8f0621cb9e0d9a5779eaf9e")]
 [assembly: System.Reflection.AssemblyProductAttribute("SengetoyApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SengetoyApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

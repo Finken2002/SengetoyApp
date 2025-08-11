@@ -1,10 +1,11 @@
 <Window x:Class="SengetoyApp.AddRoomDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Legg til / oppdater rom" Height="220" Width="380"
+        Title="Legg til / oppdater rom" Height="260" Width="380"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
   <Grid Margin="12">
     <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="Auto"/>
@@ -16,24 +17,33 @@
       <ColumnDefinition Width="*"/>
     </Grid.ColumnDefinitions>
 
+    <!-- Romnummer -->
     <TextBlock Text="Romnummer" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
     <TextBox x:Name="RoomBox" Grid.Row="0" Grid.Column="1" Margin="6,0,0,6"/>
 
-    <TextBlock Text="Sist skiftet" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" />
-    <DatePicker x:Name="DatePickerLast" Grid.Row="1" Grid.Column="1" Margin="6,0,0,6" />
+    <!-- Person (NY) -->
+    <TextBlock Text="Person" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" />
+    <TextBox x:Name="PersonBox" Grid.Row="1" Grid.Column="1" Margin="6,0,0,6"/>
 
-    <TextBlock Text="Intervall (dager)" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" />
-    <ComboBox x:Name="IntervalBox" Grid.Row="2" Grid.Column="1" Margin="6,0,0,6" SelectedIndex="1">
+    <!-- Sist skiftet -->
+    <TextBlock Text="Sist skiftet" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" />
+    <DatePicker x:Name="DatePickerLast" Grid.Row="2" Grid.Column="1" Margin="6,0,0,6" />
+
+    <!-- Intervall -->
+    <TextBlock Text="Intervall (dager)" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" />
+    <ComboBox x:Name="IntervalBox" Grid.Row="3" Grid.Column="1" Margin="6,0,0,6" SelectedIndex="1">
       <ComboBoxItem Content="7"/>
       <ComboBoxItem Content="14"/>
       <ComboBoxItem Content="30"/>
       <ComboBoxItem Content="60"/>
     </ComboBox>
 
-    <TextBlock Text="Notat" Grid.Row="3" Grid.Column="0" VerticalAlignment="Top" />
-    <TextBox x:Name="NoteBox" Grid.Row="3" Grid.Column="1" Margin="6,0,0,6" AcceptsReturn="True" Height="60" />
+    <!-- Notat -->
+    <TextBlock Text="Notat" Grid.Row="4" Grid.Column="0" VerticalAlignment="Top" />
+    <TextBox x:Name="NoteBox" Grid.Row="4" Grid.Column="1" Margin="6,0,0,6" AcceptsReturn="True" Height="60" />
 
-    <StackPanel Grid.Row="4" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
+    <!-- Knapperekke -->
+    <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
       <Button Content="Avbryt" Click="Cancel_Click" Margin="0,0,6,0" Width="80"/>
       <Button Content="Lagre" Click="Save_Click" Width="80"/>
     </StackPanel>

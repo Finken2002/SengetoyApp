@@ -6,6 +6,7 @@ namespace SengetoyApp
     public partial class AddRoomDialog : Window
     {
         public string RoomNumber => RoomBox.Text.Trim();
+        public string ResidentName => PersonBox.Text.Trim();
         public DateTime LastChanged => DatePickerLast.SelectedDate ?? DateTime.Today;
         public int IntervalDays
         {

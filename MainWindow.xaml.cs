@@ -37,15 +37,23 @@ namespace SengetoyApp
 
 
         private void EnsureDatabase()
-        {
-            using var conn = new SqliteConnection(_connStr);
-            conn.Open();
+{
+    using var conn = new SqliteConnection(_connStr);
+    conn.Open();
 
-            var cmd = conn.CreateCommand();
-            cmd.CommandText = @"
+    // Viktig i SQLite: aktiver FK-støtte
+    using (var pragma = conn.CreateCommand())
+    {
+        pragma.CommandText = "PRAGMA foreign_keys = ON;";
+        pragma.ExecuteNonQuery();
+    }
+
+    var cmd = conn.CreateCommand();
+    cmd.CommandText = @"
 CREATE TABLE IF NOT EXISTS rooms (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   room_number TEXT NOT NULL UNIQUE,
+  resident_name TEXT,           -- NY kolonne
   note TEXT
 );
 CREATE TABLE IF NOT EXISTS linens (
@@ -54,7 +62,7 @@ CREATE TABLE IF NOT EXISTS linens (
   last_changed TEXT NOT NULL,
   interval_days INTEGER NOT NULL,
   paused INTEGER NOT NULL DEFAULT 0,
-  FOREIGN KEY (room_id) REFERENCES rooms(id)
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ux_linens_room ON linens(room_id);
 
@@ -62,11 +70,35 @@ CREATE TABLE IF NOT EXISTS changes_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   room_id INTEGER NOT NULL,
   changed_at TEXT NOT NULL,
-  note TEXT
+  note TEXT,
+  FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 );
+
+-- Migrasjon: legg til resident_name hvis mangler (SQLite støtter enkel ADD COLUMN)
+PRAGMA table_info(rooms);
 ";
-            cmd.ExecuteNonQuery();
+    cmd.ExecuteNonQuery();
+
+    // Sjekk om resident_name finnes, hvis ikke: legg til
+    using (var check = conn.CreateCommand())
+    {
+        check.CommandText = "PRAGMA table_info(rooms);";
+        using var rd = check.ExecuteReader();
+        bool hasResident = false;
+        while (rd.Read())
+        {
+            if (string.Equals(rd.GetString(1), "resident_name", StringComparison.OrdinalIgnoreCase))
+                hasResident = true;
         }
+        if (!hasResident)
+        {
+            using var alter = conn.CreateCommand();
+            alter.CommandText = "ALTER TABLE rooms ADD COLUMN resident_name TEXT;";
+            alter.ExecuteNonQuery();
+        }
+    }
+}
+
 
         private static DateTime ParseIsoDate(string s)
             => DateTime.ParseExact(s, "yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -97,41 +129,43 @@ CREATE TABLE IF NOT EXISTS changes_log (
                 where += $" AND paused=0 AND date(last_changed, '+' || interval_days || ' days') BETWEEN date('{ToIsoDate(today)}') AND date('{ToIsoDate(weekEnd)}')";
 
             if (!string.IsNullOrEmpty(search))
-                where += $" AND (room_number LIKE '%' || @search || '%' OR IFNULL(note,'') LIKE '%' || @search || '%')";
+    where += $" AND (room_number LIKE '%' || @search || '%' OR IFNULL(resident_name,'') LIKE '%' || @search || '%' OR IFNULL(note,'') LIKE '%' || @search || '%')";
 
-            var cmd = conn.CreateCommand();
-            cmd.CommandText = $@"
-SELECT r.id, r.room_number, r.note, l.last_changed, l.interval_days, l.paused
+var cmd = conn.CreateCommand();
+cmd.CommandText = $@"
+SELECT r.id, r.room_number, r.resident_name, r.note, l.last_changed, l.interval_days, l.paused
 FROM rooms r
 JOIN linens l ON l.room_id=r.id
 WHERE {where}
 ORDER BY 
   (date(l.last_changed, '+' || l.interval_days || ' days') < date('now')) DESC,
-  date(l.last_changed, '+' || l.interval_days || ' days') ASC,
-  r.room_number ASC;
-";
+  date(l.last_changed, '+' || l.interval_days || ' ' || ' days') ASC,
+  r.room_number ASC;";
+
             if (!string.IsNullOrEmpty(search))
                 cmd.Parameters.AddWithValue("@search", search);
 
             using var rd = cmd.ExecuteReader();
             while (rd.Read())
-            {
-                var last = ParseIsoDate(rd.GetString(3));
-                var interval = rd.GetInt32(4);
-                var nextDue = last.AddDays(interval);
-                var paused = rd.GetInt32(5) == 1;
+{
+var last = ParseIsoDate(rd.GetString(4));
+var interval = rd.GetInt32(5);
+var nextDue = last.AddDays(interval);
+var paused = rd.GetInt32(6) == 1;
 
-                Rows.Add(new RoomRow
-                {
-                    Id = rd.GetInt32(0),
-                    RoomNumber = rd.GetString(1),
-                    Note = rd.IsDBNull(2) ? "" : rd.GetString(2),
-                    LastChanged = last,
-                    IntervalDays = interval,
-                    NextDue = nextDue,
-                    Paused = paused
-                });
-            }
+Rows.Add(new RoomRow
+{
+    Id = rd.GetInt32(0),
+    RoomNumber = rd.GetString(1),
+    ResidentName = rd.IsDBNull(2) ? "" : rd.GetString(2), // NY
+    Note = rd.IsDBNull(3) ? "" : rd.GetString(3),
+    LastChanged = last,
+    IntervalDays = interval,
+    NextDue = nextDue,
+    Paused = paused
+});
+
+}
 
             Grid.ItemsSource = Rows;
             StatusText = $"Viser {Rows.Count} rom";
@@ -152,40 +186,144 @@ ORDER BY
 
 
         private void AddRoom_Click(object sender, RoutedEventArgs e)
+{
+    var dlg = new AddRoomDialog { Owner = this };
+    if (dlg.ShowDialog() != true) return;
+
+    using var conn = new SqliteConnection(_connStr);
+    conn.Open();
+
+    // Sørg for at fremmednøkler er på (for sletting m.m.)
+    using (var pragma = conn.CreateCommand())
+    {
+        pragma.CommandText = "PRAGMA foreign_keys = ON;";
+        pragma.ExecuteNonQuery();
+    }
+
+    // 1) Opprett rom hvis det er nytt
+    using (var cmd = conn.CreateCommand())
+    {
+        cmd.CommandText = @"
+INSERT OR IGNORE INTO rooms (room_number, resident_name, note)
+VALUES (@nr, @resident, @note);";
+        cmd.Parameters.AddWithValue("@nr", dlg.RoomNumber);
+        cmd.Parameters.AddWithValue("@resident", dlg.ResidentName ?? "");
+        cmd.Parameters.AddWithValue("@note", dlg.Note ?? "");
+        cmd.ExecuteNonQuery();
+    }
+
+    // 2) Finn room_id
+    int roomId;
+    using (var cmd = conn.CreateCommand())
+    {
+        cmd.CommandText = "SELECT id FROM rooms WHERE room_number=@nr;";
+        cmd.Parameters.AddWithValue("@nr", dlg.RoomNumber);
+        roomId = Convert.ToInt32(cmd.ExecuteScalar());
+    }
+
+    // 3) Oppdater alltid personnavn og notat (om rommet fantes fra før)
+    using (var cmd = conn.CreateCommand())
+    {
+        cmd.CommandText = @"
+UPDATE rooms
+SET resident_name=@resident, note=@note
+WHERE id=@id;";
+        cmd.Parameters.AddWithValue("@resident", dlg.ResidentName ?? "");
+        cmd.Parameters.AddWithValue("@note", dlg.Note ?? "");
+        cmd.Parameters.AddWithValue("@id", roomId);
+        cmd.ExecuteNonQuery();
+    }
+
+    // 4) UPSERT på linens (siste skiftedato + intervall)
+    using (var cmd = conn.CreateCommand())
+    {
+        cmd.CommandText = @"
+INSERT INTO linens (room_id, last_changed, interval_days, paused)
+VALUES (@rid, @last, @int, 0)
+ON CONFLICT(room_id) DO UPDATE
+SET last_changed=excluded.last_changed,
+    interval_days=excluded.interval_days;";
+        cmd.Parameters.AddWithValue("@rid", roomId);
+        cmd.Parameters.AddWithValue("@last", ToIsoDate(dlg.LastChanged.Date));
+        cmd.Parameters.AddWithValue("@int", dlg.IntervalDays);
+        cmd.ExecuteNonQuery();
+    }
+
+    // 5) (Valgfritt) logg hendelsen
+    using (var cmd = conn.CreateCommand())
+    {
+        cmd.CommandText = @"
+INSERT INTO changes_log (room_id, changed_at, note)
+VALUES (@rid, @ts, @note);";
+        cmd.Parameters.AddWithValue("@rid", roomId);
+        cmd.Parameters.AddWithValue("@ts", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        cmd.Parameters.AddWithValue("@note", "Opprettet/oppdatert rom");
+        cmd.ExecuteNonQuery();
+    }
+
+    // 6) Oppdater UI
+    LoadRows();
+    FooterText = $"La til/oppdaterte rom {dlg.RoomNumber} ({dlg.ResidentName}).";
+    DataContext = null; DataContext = this;
+}
+
+private void DeleteRoom_Click(object sender, RoutedEventArgs e)
+{
+    if (RowFromSender(sender) is not RoomRow row) return;
+
+    var confirm = MessageBox.Show(
+        $"Slette rom {row.RoomNumber} ({row.ResidentName})?\nDette kan ikke angres.",
+        "Bekreft sletting",
+        MessageBoxButton.YesNo,
+        MessageBoxImage.Warning);
+
+    if (confirm != MessageBoxResult.Yes) return;
+
+    try
+    {
+        using var conn = new SqliteConnection(_connStr);
+        conn.Open();
+
+        // Slett eksplisitt i riktig rekkefølge (for gamle skjema uten ON DELETE CASCADE)
+        using var tx = conn.BeginTransaction();
+
+        using (var cmd = conn.CreateCommand())
         {
-            var dlg = new AddRoomDialog { Owner = this };
-            if (dlg.ShowDialog() == true)
-            {
-                using var conn = new SqliteConnection(_connStr);
-                conn.Open();
-
-                var cmd = conn.CreateCommand();
-                cmd.CommandText = "INSERT OR IGNORE INTO rooms(room_number, note) VALUES(@nr, @note);";
-                cmd.Parameters.AddWithValue("@nr", dlg.RoomNumber);
-                cmd.Parameters.AddWithValue("@note", dlg.Note ?? "");
-                cmd.ExecuteNonQuery();
-
-                cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT id FROM rooms WHERE room_number=@nr;";
-                cmd.Parameters.AddWithValue("@nr", dlg.RoomNumber);
-                var roomId = Convert.ToInt32(cmd.ExecuteScalar());
-
-                cmd = conn.CreateCommand();
-                cmd.CommandText = @"
-INSERT INTO linens(room_id, last_changed, interval_days, paused)
-VALUES(@rid, @last, @int, 0)
-ON CONFLICT(room_id) DO UPDATE 
-SET last_changed=excluded.last_changed, interval_days=excluded.interval_days;";
-                cmd.Parameters.AddWithValue("@rid", roomId);
-                cmd.Parameters.AddWithValue("@last", ToIsoDate(dlg.LastChanged.Date));
-                cmd.Parameters.AddWithValue("@int", dlg.IntervalDays);
-                cmd.ExecuteNonQuery();
-
-                LoadRows();
-                FooterText = $"La til/oppdaterte rom {dlg.RoomNumber}.";
-                DataContext = null; DataContext = this;
-            }
+            cmd.Transaction = tx;
+            cmd.CommandText = "DELETE FROM changes_log WHERE room_id=@id;";
+            cmd.Parameters.AddWithValue("@id", row.Id);
+            cmd.ExecuteNonQuery();
         }
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = "DELETE FROM linens WHERE room_id=@id;";
+            cmd.Parameters.AddWithValue("@id", row.Id);
+            cmd.ExecuteNonQuery();
+        }
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = "DELETE FROM rooms WHERE id=@id;";
+            cmd.Parameters.AddWithValue("@id", row.Id);
+            cmd.ExecuteNonQuery();
+        }
+
+        tx.Commit();
+
+        LoadRows();
+        FooterText = $"Slettet rom {row.RoomNumber}.";
+        DataContext = null; DataContext = this;
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show($"Klarte ikke å slette rommet:\n{ex.Message}", "Feil ved sletting",
+            MessageBoxButton.OK, MessageBoxImage.Error);
+        // ikke crash appen – bare returner
+    }
+}
+
+
 
         private RoomRow? RowFromSender(object sender)
             => (sender as FrameworkElement)?.DataContext as RoomRow;
@@ -250,44 +388,13 @@ SET last_changed=excluded.last_changed, interval_days=excluded.interval_days;";
             FooterText = $"Rom {row.RoomNumber}: {(row.Paused ? "aktivert" : "pauset")}.";
             DataContext = null; DataContext = this;
         }
-
-        private void ExportToday_Click(object sender, RoutedEventArgs e)
-        {
-            var today = DateTime.Today;
-            using var conn = new SqliteConnection(_connStr);
-            conn.Open();
-            var cmd = conn.CreateCommand();
-            cmd.CommandText = $@"
-SELECT r.room_number, l.interval_days,
-       date(l.last_changed) AS last_changed,
-       date(l.last_changed, '+' || l.interval_days || ' days') AS next_due,
-       IFNULL(r.note,'') AS note
-FROM rooms r JOIN linens l ON l.room_id=r.id
-WHERE l.paused=0
-  AND date(l.last_changed, '+' || l.interval_days || ' days') = date('{ToIsoDate(today)}')
-ORDER BY r.room_number;";
-            using var rd = cmd.ExecuteReader();
-
-            var sb = new StringBuilder();
-            sb.AppendLine("Rom,Intervall,Sist skiftet,Neste,Notat");
-            while (rd.Read())
-            {
-                var note = rd.IsDBNull(4) ? "" : rd.GetString(4);
-                note = note.Replace(',', ' ');
-                sb.AppendLine($"{rd.GetString(0)},{rd.GetInt32(1)},{rd.GetString(2)},{rd.GetString(3)},{note}");
-
-            }
-
-            var path = Path.Combine(_appDir, $"Dagens_liste_{ToIsoDate(today)}.csv");
-            File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
-            MessageBox.Show($"Lagret:\n{path}", "Eksport fullført", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
     }
 
     public class RoomRow
     {
         public int Id { get; set; }
         public string RoomNumber { get; set; } = "";
+        public string ResidentName { get; set; } = "";
         public string Note { get; set; } = "";
         public DateTime LastChanged { get; set; }
         public int IntervalDays { get; set; }
