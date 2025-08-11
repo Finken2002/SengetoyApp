@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dgSpecHash": "H5fI8qXgH60=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Finken\\Downloads\\SengetoyApp_starter\\sengetoyapp\\SengetoyApp.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Finken\\.nuget\\packages\\microsoft.data.sqlite\\8.0.4\\microsoft.data.sqlite.8.0.4.nupkg.sha512",
+    "C:\\Users\\Finken\\.nuget\\packages\\microsoft.data.sqlite.core\\8.0.4\\microsoft.data.sqlite.core.8.0.4.nupkg.sha512",
+    "C:\\Users\\Finken\\.nuget\\packages\\sqlitepclraw.bundle_e_sqlite3\\2.1.6\\sqlitepclraw.bundle_e_sqlite3.2.1.6.nupkg.sha512",
+    "C:\\Users\\Finken\\.nuget\\packages\\sqlitepclraw.core\\2.1.6\\sqlitepclraw.core.2.1.6.nupkg.sha512",
+    "C:\\Users\\Finken\\.nuget\\packages\\sqlitepclraw.lib.e_sqlite3\\2.1.6\\sqlitepclraw.lib.e_sqlite3.2.1.6.nupkg.sha512",
+    "C:\\Users\\Finken\\.nuget\\packages\\sqlitepclraw.provider.e_sqlite3\\2.1.6\\sqlitepclraw.provider.e_sqlite3.2.1.6.nupkg.sha512",
+    "C:\\Users\\Finken\\.nuget\\packages\\system.memory\\4.5.3\\system.memory.4.5.3.nupkg.sha512"
+  ],
+  "logs": []
+}
