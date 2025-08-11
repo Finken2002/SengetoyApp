@@ -11,8 +11,11 @@ namespace SengetoyApp
         {
             try
             {
+                // Valgfritt: ta maks én backup per dag ved oppstart
+                BackupUtility.RunDaily();
+
                 var w = new MainWindow();
-                MainWindow = w;          // sørger for riktig ShutdownMode
+                MainWindow = w;
                 w.Show();
             }
             catch (Exception ex)
@@ -22,11 +25,17 @@ namespace SengetoyApp
             }
         }
 
-        // Fanger ubehandlede exceptions i UI-tråden
+        protected override void OnExit(ExitEventArgs e)
+        {
+            // Automatisk backup ved avslutning
+            BackupUtility.Run();
+            base.OnExit(e);
+        }
+
         private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             LogAndShow("Uventet feil", e.Exception);
-            e.Handled = true; // hindre krasj-dialog fra .NET
+            e.Handled = true;
             Shutdown(-1);
         }
 
@@ -44,7 +53,6 @@ namespace SengetoyApp
             }
             catch
             {
-                // Som siste utvei, prøv bare å vise feilen
                 MessageBox.Show($"{ex}", title);
             }
         }

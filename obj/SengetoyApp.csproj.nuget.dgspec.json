@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Finken\\Downloads\\SengetoyApp_starter\\sengetoyapp\\SengetoyApp.csproj": {}
+    "C:\\Users\\Finken\\Documents\\GitHub\\SengetoyApp\\SengetoyApp.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Finken\\Downloads\\SengetoyApp_starter\\sengetoyapp\\SengetoyApp.csproj": {
+    "C:\\Users\\Finken\\Documents\\GitHub\\SengetoyApp\\SengetoyApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Finken\\Downloads\\SengetoyApp_starter\\sengetoyapp\\SengetoyApp.csproj",
+        "projectUniqueName": "C:\\Users\\Finken\\Documents\\GitHub\\SengetoyApp\\SengetoyApp.csproj",
         "projectName": "SengetoyApp",
-        "projectPath": "C:\\Users\\Finken\\Downloads\\SengetoyApp_starter\\sengetoyapp\\SengetoyApp.csproj",
+        "projectPath": "C:\\Users\\Finken\\Documents\\GitHub\\SengetoyApp\\SengetoyApp.csproj",
         "packagesPath": "C:\\Users\\Finken\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Finken\\Downloads\\SengetoyApp_starter\\sengetoyapp\\obj\\",
+        "outputPath": "C:\\Users\\Finken\\Documents\\GitHub\\SengetoyApp\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Finken\\AppData\\Roaming\\NuGet\\NuGet.Config"
