@@ -354,6 +354,38 @@ private void DeleteRoom_Click(object sender, RoutedEventArgs e)
             DataContext = null; DataContext = this;
         }
 
+        private void MarkYesterday_Click(object sender, RoutedEventArgs e)
+        {
+            if (RowFromSender(sender) is not RoomRow row) return;
+
+            var yesterday = DateTime.Today.AddDays(-1);
+
+            // (Valgfritt) Unngå å gå bakover i tid forbi siste registrerte dato
+            // Hvis du vil låse det: if (yesterday < row.LastChanged) yesterday = row.LastChanged;
+
+            using var conn = new SqliteConnection(_connStr);
+            conn.Open();
+
+            var cmd = conn.CreateCommand();
+            cmd.CommandText = "UPDATE linens SET last_changed=@d WHERE room_id=@rid;";
+            cmd.Parameters.AddWithValue("@d", ToIsoDate(yesterday));
+            cmd.Parameters.AddWithValue("@rid", row.Id);
+            cmd.ExecuteNonQuery();
+
+            // Logg hendelsen
+            cmd = conn.CreateCommand();
+            cmd.CommandText = "INSERT INTO changes_log(room_id, changed_at, note) VALUES(@rid, @ts, @note);";
+            cmd.Parameters.AddWithValue("@rid", row.Id);
+            cmd.Parameters.AddWithValue("@ts", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            cmd.Parameters.AddWithValue("@note", "Skiftet i går");
+            cmd.ExecuteNonQuery();
+
+            LoadRows();
+            FooterText = $"Rom {row.RoomNumber}: markert som skiftet i går.";
+            DataContext = null; DataContext = this;
+        }
+
+
         private void MarkPrevious_Click(object sender, RoutedEventArgs e)
         {
             if (RowFromSender(sender) is not RoomRow row) return;

@@ -38,6 +38,7 @@
     <DataTemplate>
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
         <Button Content="Skiftet i dag" Click="MarkToday_Click" Margin="0,0,6,0" Padding="6,2"/>
+        <Button Content="Skiftet i går" Click="MarkYesterday_Click" Margin="0,0,6,0" Padding="6,2"/>
         <Button Content="Skiftet tidligere…" Click="MarkPrevious_Click" Margin="0,0,6,0" Padding="6,2"/>
         <Button Content="{Binding PauseButtonLabel}" Click="TogglePause_Click" Margin="0,0,6,0" Padding="6,2"/>
         <Button Content="Slett" Click="DeleteRoom_Click" Padding="6,2"/>
